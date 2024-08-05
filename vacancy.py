@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
+from entities import Name, Link, Salary, VacancyDescription, Employer
 
 
 class BaseVacancy(ABC):
 
     @abstractmethod
-    def create_vacancy(self):
+    def create_vacancy(self, vacancies: list[dict]):
         pass
 
 
@@ -22,15 +23,38 @@ class Vacancy(BaseVacancy):
         self.link = link
         self.name = name
 
-    @classmethod
-    def create_vacancy(cls):
-        pass
+    def create_vacancy(self, vacancies: list[dict]):
+        steps = (self.name.create_entity,
+                 self.link.create_entity,
+                 self.pay.create_entity,
+                 self.employer_info.create_entity,
+                 self.description.create_entity)
+
+        return [[step(vacancy) for step in steps] for vacancy in vacancies]
 
     def __repr__(self):
         return f"{self.name}. {self.link}. {self.pay}. {self.description}. {self.employer_info}."
 
+    def __eq__(self, other):
+        pass
 
-vacancies = [
+    def __ne__(self, other):
+        pass
+
+    def __gt__(self, other):
+        pass
+
+    def __lt__(self, other):
+        pass
+
+    def __le__(self, other):
+        pass
+
+    def __ge__(self, other):
+        pass
+
+
+vacancies_1 = [
     {
         "id": "93353083",
         "premium": False,
@@ -144,6 +168,6 @@ vacancies = [
     },
 ]
 if __name__ == '__main__':
-    pass
-
-
+    vac = Vacancy(Name, Link, Salary, VacancyDescription, Employer)
+    vacancies_list = vac.create_vacancy(vacancies_1)
+    print(*vacancies_list)
