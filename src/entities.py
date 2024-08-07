@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
+import re
 
 
 class AbstractEntity(ABC):
@@ -33,7 +34,7 @@ class Link(AbstractEntity):
 
     @classmethod
     def create_entity(cls, vacancy: dict[str, Any]):
-        url = vacancy.get("url", "не указано")
+        url = vacancy.get("alternate_url", "не указано")
         return cls(url)
 
     def __repr__(self):
@@ -101,6 +102,31 @@ class VacancyDescription(AbstractEntity):
         self.responsibility = responsibility
         self.requirement = requirement
 
+    @property
+    def requirement(self):
+
+        html_pattern = re.compile("<.*?>")
+        return re.sub(html_pattern, "", self._requirement)
+
+    @requirement.setter
+    def requirement(self, value):
+        if value:
+            self._requirement = value
+        else:
+            self._requirement = "не указаны"
+
+    @property
+    def responsibility(self):
+        html_pattern = re.compile("<.*?>")
+        return re.sub(html_pattern, "", self._responsibility)
+
+    @responsibility.setter
+    def responsibility(self, value):
+        if value:
+            self._responsibility = value
+        else:
+            self._responsibility = "не указаны"
+
     @classmethod
     def create_entity(cls, vacancy: dict[str, Any]):
         description = vacancy.get("snippet")
@@ -123,7 +149,7 @@ class Employer(AbstractEntity):
     @classmethod
     def create_entity(cls, vacancy: dict[str:Any]):
         employer = vacancy.get("employer")
-        url = employer.get("url")
+        url = employer.get("alternate_url")
         name = employer.get("name")
         return cls(url, name)
 
