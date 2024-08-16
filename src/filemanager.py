@@ -39,24 +39,38 @@ class BaseDataManager(ABC):
 
 class DataBaseManager(BaseDataManager):
 
-    def __init__(self, db_name: str, params: dict):
+    def __init__(self, db_name: str, params: dict, cursor):
         self.db_name = db_name
         self.params = params
+        self.cursor = cursor
 
     def get_companies_and_vacancies_count(self):
-        self.cursor.execute("""SELECT DISTINCT(name), COUNT() FROM """)
+        result = self.cursor.execute("""SELECT employers.name, COUNT(*) AS total_vacancies FROM employers
+                            JOIN vacancies ON vacancies.employer_id = employers.id
+                            GROUP BY employers.name""")
+        return result
 
     def get_all_vacancies(self):
-        pass
+        result = self.cursor.execute("""SELECT employers.name AS employer_name, vacancies.name 
+                                    AS vacancy_name , top_salary, vacancies.link AS vacancy_link FROM employers
+                                    JOIN vacancies ON vacancies.employer_id = employers.id
+                                    WHERE top_salary IS NOT NULL
+                                    ORDER BY top_salary DESC""")
 
     def get_avg_salary(self):
-        pass
+        result = self.cursor.execute("""SELECT name, AVG(top_salary)::numeric(10,2) AS avg_salary FROM vacancies
+                                    WHERE top_salary IS NOT NULL
+                                    GROUP BY name, top_salary
+                                    ORDER BY top_salary DESC""")
 
     def get_vacancies_with_higher_salary(self):
-        pass
+        result = self.cursor.execute("""SELECT * FROM vacancies
+                                    WHERE top_salary > (SELECT AVG(top_salary) FROM vacancies)
+                                    ORDER BY top_salary DESC""")
 
     def get_vacancies_with_keyword(self):
-        pass
+        result = self.cursor.execute("""SELECT * FROM vacancies
+                                    WHERE name LIKE '%Python%'""")
 
 
 class DataBaseConnector:
@@ -68,7 +82,7 @@ class DataBaseConnector:
 
     def open_connection(self):
         try:
-            self.connection = psycopg2.connect(self.db_manager.db_name, **self.db_manager.params)
+            self.connection = psycopg2.connect(dbname=self.db_manager.db_name, **self.db_manager.params)
             self.cursor = self.connection.cursor()
             print(f"Connection to {self.db_manager.db_name} database is successful")
         except OperationalError as err:
@@ -93,15 +107,15 @@ class DataBaseConnector:
             connection = psycopg2.connect(dbname=database_name, **params)
             cursor = connection.cursor()
             cursor.execute("""CREATE TABLE employers (
-                            id SERIAL PRIMARY KEY,
+                            id INT PRIMARY KEY,
                             name VARCHAR(100),
                             link VARCHAR(100),
                             address VARCHAR(100) 
                            )""")
 
             cursor.execute("""CREATE TABLE vacancies (
-                            vacancy_id SERIAL,
-                            employer_id INT REFERENCES employers(id),
+                            vacancy_id SERIAL PRIMARY KEY,
+                            employer_id INT,
                             name VARCHAR(100),
                             link VARCHAR(100),
                             bottom_salary INT DEFAULT NULL,
@@ -109,7 +123,8 @@ class DataBaseConnector:
                             currency VARCHAR(10) DEFAULT NULL,
                             gross BOOLEAN DEFAULT NULL,
                             responsibilities TEXT,
-                            requirements TEXT
+                            requirements TEXT,
+                            CONSTRAINT fk_employer_id FOREIGN KEY(employer_id) REFERENCES employers(id)
                             )""")
             connection.commit()
             cursor.close()
@@ -118,26 +133,49 @@ class DataBaseConnector:
             print(f"The error '{err}' occurred")
 
     @staticmethod
-    def fill_database(vacancies: list, database_name: str, params: dict):
+    def fill_employers(vacancies: list, database_name: str, params: dict):
         connection = psycopg2.connect(dbname=database_name, **params)
         cursor = connection.cursor()
+        company_names = set()
         for vacancy in vacancies:
-            cursor.execute(
-                f"INSERT INTO employers (name, link, address) VALUES ('{vacancy[VacancyFields.EMPLOYER_INFO.value].name}', '{vacancy[VacancyFields.EMPLOYER_INFO.value].url}', '{vacancy[VacancyFields.ADDRESS.value]}')")
-            if vacancy[VacancyFields.PAY.value] == "Зарплата не указана":
+            if vacancy[VacancyFields.EMPLOYER_INFO.value].name not in company_names:
                 cursor.execute(
-                    f"INSERT INTO vacancies (name, link, responsibilities, requirements) VALUES ('{vacancy[VacancyFields.NAME.value]}', '{vacancy[VacancyFields.LINK.value]}', '{vacancy[VacancyFields.DESCRIPTION.value].responsibility}', '{vacancy[VacancyFields.DESCRIPTION.value].requirement}')")
-            else:
-                cursor.execute(
-                    f"INSERT INTO vacancies (name, link, bottom_salary, top_salary, currency, gross, responsibilities, requirements) VALUES ('{vacancy[VacancyFields.NAME.value]}', '{vacancy[VacancyFields.LINK.value]}', {vacancy[VacancyFields.PAY.value].bottom_salary}, {vacancy[VacancyFields.PAY.value].top_salary}, '{vacancy[VacancyFields.PAY.value].currency}', '{vacancy[VacancyFields.PAY.value].gross}', '{vacancy[VacancyFields.DESCRIPTION.value].responsibility}', '{vacancy[VacancyFields.DESCRIPTION.value].requirement}')")
+                    f"INSERT INTO employers (id, name, link, address) VALUES "
+                    f"('{vacancy[VacancyFields.EMPLOYER_INFO.value].employer_id}', "
+                    f"'{vacancy[VacancyFields.EMPLOYER_INFO.value].name}', "
+                    f"'{vacancy[VacancyFields.EMPLOYER_INFO.value].url}', "
+                    f"'{vacancy[VacancyFields.ADDRESS.value]}')")
+            company_names.add(vacancy[VacancyFields.EMPLOYER_INFO.value].name)
         connection.commit()
         cursor.close()
         connection.close()
 
-
-if __name__ == '__main__':
-    # par = config()
-    # print(par)
-    # DataBaseConnector.create_database("vacancies", par)
-    # DataBaseConnector.fill_database()
-    print(VacancyFields.EMPLOYER_INFO.value)
+    @staticmethod
+    def fill_vacancies(vacancies: list, database_name: str, params: dict):
+        connection = psycopg2.connect(dbname=database_name, **params)
+        cursor = connection.cursor()
+        for vacancy in vacancies:
+            if vacancy[VacancyFields.PAY.value] == "Зарплата не указана":
+                cursor.execute(
+                    f"INSERT INTO vacancies (employer_id, name, link, responsibilities, requirements) VALUES "
+                    f"('{vacancy[VacancyFields.EMPLOYER_INFO.value].employer_id}', "
+                    f"'{vacancy[VacancyFields.NAME.value]}', "
+                    f"'{vacancy[VacancyFields.LINK.value]}', "
+                    f"'{vacancy[VacancyFields.DESCRIPTION.value].responsibility}', "
+                    f"'{vacancy[VacancyFields.DESCRIPTION.value].requirement}')")
+            else:
+                cursor.execute(
+                    f"INSERT INTO vacancies "
+                    f"(employer_id, name, link, bottom_salary, top_salary, currency, gross, responsibilities, requirements) "
+                    f"VALUES ('{vacancy[VacancyFields.EMPLOYER_INFO.value].employer_id}', "
+                    f"'{vacancy[VacancyFields.NAME.value]}', "
+                    f"'{vacancy[VacancyFields.LINK.value]}', "
+                    f"{vacancy[VacancyFields.PAY.value].bottom_salary}, "
+                    f"{vacancy[VacancyFields.PAY.value].top_salary}, "
+                    f"'{vacancy[VacancyFields.PAY.value].currency}', "
+                    f"'{vacancy[VacancyFields.PAY.value].gross}', "
+                    f"'{vacancy[VacancyFields.DESCRIPTION.value].responsibility}', "
+                    f"'{vacancy[VacancyFields.DESCRIPTION.value].requirement}')")
+        connection.commit()
+        cursor.close()
+        connection.close()

@@ -60,7 +60,7 @@ class Salary(AbstractEntity):
     @bottom_salary.setter
     def bottom_salary(self, value):
         if not value:
-            self._bottom_salary = "не указано"
+            self._bottom_salary = 0
         else:
             self._bottom_salary = value
 
@@ -71,7 +71,7 @@ class Salary(AbstractEntity):
     @top_salary.setter
     def top_salary(self, value):
         if not value:
-            self._top_salary = "не указано"
+            self._top_salary = 0
         else:
             self._top_salary = value
 
@@ -106,7 +106,8 @@ class VacancyDescription(AbstractEntity):
     def requirement(self):
 
         html_pattern = re.compile("<.*?>")
-        return re.sub(html_pattern, "", self._requirement)
+        edited = re.sub(html_pattern, "", self._requirement)
+        return edited.replace("'", " ")
 
     @requirement.setter
     def requirement(self, value):
@@ -161,16 +162,18 @@ class Address(AbstractEntity):
 
 class Employer(AbstractEntity):
 
-    def __init__(self, url: str, name: str):
+    def __init__(self, url: str, name: str, employer_id: str):
         self.url = url
         self.name = name
+        self.employer_id = employer_id
 
     @classmethod
     def create_entity(cls, vacancy: dict[str:Any]):
         employer = vacancy.get("employer")
         url = employer.get("alternate_url")
         name = employer.get("name")
-        return cls(url, name)
+        employer_id = employer.get("id")
+        return cls(url, name, employer_id)
 
     def __repr__(self):
         return f"{self.name} {self.url}"

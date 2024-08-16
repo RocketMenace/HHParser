@@ -40,7 +40,19 @@ class HHApiConnector(BaseApiConnector):
     def _get_data(self) -> list[dict]:
         keyword = input("Enter profession's name: ")
         HHApiConnector._params["text"] = keyword.title()
-        employers_id = ['5124731', '907345', "239363", "4813742", "5060211", "78638", "80", "3529", "1740", "41144"]
+        employers_id = ['5124731',
+                        '907345',
+                        "239363",
+                        "4813742",
+                        "5060211",
+                        "78638",
+                        "80",
+                        "3529",
+                        "1740",
+                        "41144",
+                        "4118",
+                        "6093775",
+                        "39305"]
         HHApiConnector._params["employer_id"] = employers_id
         while HHApiConnector._params.get("page") != 20:
             try:
@@ -68,4 +80,5 @@ if __name__ == '__main__':
     con = HHApiConnector()
     manager = APIManager(con)
     content = manager.api_connection()
+    print(content)
 
