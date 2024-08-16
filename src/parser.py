@@ -15,7 +15,7 @@ class BaseAPIManager(ABC):
 class BaseApiConnector(ABC):
 
     @abstractmethod
-    def get_data(self) -> list[dict]:
+    def _get_data(self) -> list[dict]:
         pass
 
 
@@ -25,21 +25,23 @@ class APIManager(BaseAPIManager):
         self.connector = connector
 
     def api_connection(self):
-        content = self.connector.get_data()
+        content = self.connector._get_data()
         return content
 
 
 class HHApiConnector(BaseApiConnector):
     _url: str = "https://api.hh.ru/vacancies"
     _headers: dict[str, str] = {"User-Agent": "api-test-agent"}
-    _params: dict[str, Any] = {"text": "", "page": 0, "per_page": 100}
+    _params: dict[str, Any] = {"text": " ", "page": 0, "per_page": 100}
 
     def __init__(self):
         self.vacancies = []
 
-    def get_data(self) -> list[dict]:
+    def _get_data(self) -> list[dict]:
         keyword = input("Enter profession's name: ")
         HHApiConnector._params["text"] = keyword.title()
+        employers_id = ['5124731', '907345', "239363", "4813742", "5060211", "78638", "80", "3529", "1740", "41144"]
+        HHApiConnector._params["employer_id"] = employers_id
         while HHApiConnector._params.get("page") != 20:
             try:
                 response = requests.get(
@@ -59,3 +61,11 @@ class HHApiConnector(BaseApiConnector):
                 )
                 logger.error(f"HTTP error occurred: {http_err}")
         return self.vacancies
+
+
+
+if __name__ == '__main__':
+    con = HHApiConnector()
+    manager = APIManager(con)
+    content = manager.api_connection()
+

@@ -79,7 +79,7 @@ class Salary(AbstractEntity):
     def create_entity(cls, vacancy: dict[str, Any]):
         salary = vacancy.get("salary")
         if not salary:
-            return f"Зарплата не указана"
+            return "Зарплата не указана"
         gross = salary.get(
             "gross",
         )
@@ -138,11 +138,30 @@ class VacancyDescription(AbstractEntity):
         return f"{self.responsibility} {self.requirement}"
 
 
-class Employer(AbstractEntity):
-    url: str
-    name: str
+class Address(AbstractEntity):
 
-    def __init__(self, url, name):
+    def __init__(self, city: str, street: str, building: str):
+        self.city = city
+        self.street = street
+        self.building = building
+
+    @classmethod
+    def create_entity(cls, vacancy: dict[str: Any]):
+        address = vacancy.get("address")
+        if not address:
+            return 'Адрес не указан'
+        city = address.get("city")
+        street = address.get("street")
+        building = address.get("building")
+        return cls(city, street, building)
+
+    def __repr__(self):
+        return f"г. {self.city}, ул. {self.street}, стр. {self.building}"
+
+
+class Employer(AbstractEntity):
+
+    def __init__(self, url: str, name: str):
         self.url = url
         self.name = name
 
