@@ -20,16 +20,19 @@ class BaseApiConnector(ABC):
 
 
 class APIManager(BaseAPIManager):
+    """API connection manager."""
 
     def __init__(self, connector):
         self.connector = connector
 
     def api_connection(self):
+        """Connects to API using specified API connector."""
         content = self.connector._get_data()
         return content
 
 
 class HHApiConnector(BaseApiConnector):
+    """API connector for extracting data form hh.ru"""
     _url: str = "https://api.hh.ru/vacancies"
     _headers: dict[str, str] = {"User-Agent": "api-test-agent"}
     _params: dict[str, Any] = {"text": " ", "page": 0, "per_page": 100}
@@ -38,7 +41,8 @@ class HHApiConnector(BaseApiConnector):
         self.vacancies = []
 
     def _get_data(self) -> list[dict]:
-        keyword = input("Enter profession's name: ")
+        """Extract data using specified parameters."""
+        keyword = "Программист"
         HHApiConnector._params["text"] = keyword.title()
         employers_id = ['5124731',
                         '907345',
@@ -76,9 +80,5 @@ class HHApiConnector(BaseApiConnector):
 
 
 
-if __name__ == '__main__':
-    con = HHApiConnector()
-    manager = APIManager(con)
-    content = manager.api_connection()
-    print(content)
+
 

@@ -1,3 +1,7 @@
+"""
+Module for creating entities that are used when creating the Vacancy class.
+"""
+
 from abc import ABC, abstractmethod
 from typing import Any
 import re
@@ -12,6 +16,7 @@ class AbstractEntity(ABC):
 
 
 class Name(AbstractEntity):
+    """Class for creating Name field."""
     name: str
 
     def __init__(self, name):
@@ -19,6 +24,7 @@ class Name(AbstractEntity):
 
     @classmethod
     def create_entity(cls, vacancy: dict[str, Any]):
+        """Returns instance of Name class."""
         name = vacancy.get("name", "не указано")
         return cls(name)
 
@@ -27,6 +33,7 @@ class Name(AbstractEntity):
 
 
 class Link(AbstractEntity):
+    """Class for creating Link field."""
     url: str
 
     def __init__(self, url):
@@ -34,6 +41,7 @@ class Link(AbstractEntity):
 
     @classmethod
     def create_entity(cls, vacancy: dict[str, Any]):
+        """Returns instance of Link class."""
         url = vacancy.get("alternate_url", "не указано")
         return cls(url)
 
@@ -42,6 +50,7 @@ class Link(AbstractEntity):
 
 
 class Salary(AbstractEntity):
+    """Class for creating Salary field."""
     gross: bool
     currency: str
     top_salary: int
@@ -77,6 +86,7 @@ class Salary(AbstractEntity):
 
     @classmethod
     def create_entity(cls, vacancy: dict[str, Any]):
+        """Returns instance of Salary class."""
         salary = vacancy.get("salary")
         if not salary:
             return "Зарплата не указана"
@@ -95,6 +105,7 @@ class Salary(AbstractEntity):
 
 
 class VacancyDescription(AbstractEntity):
+    """Class for creating VacancyDescription field."""
     responsibility: str
     requirement: str
 
@@ -104,7 +115,6 @@ class VacancyDescription(AbstractEntity):
 
     @property
     def requirement(self):
-
         html_pattern = re.compile("<.*?>")
         edited = re.sub(html_pattern, "", self._requirement)
         return edited.replace("'", " ")
@@ -130,6 +140,7 @@ class VacancyDescription(AbstractEntity):
 
     @classmethod
     def create_entity(cls, vacancy: dict[str, Any]):
+        """Returns instance of VacancyDescription class."""
         description = vacancy.get("snippet")
         responsibility = description.get("responsibility")
         requirement = description.get("requirement")
@@ -140,6 +151,7 @@ class VacancyDescription(AbstractEntity):
 
 
 class Address(AbstractEntity):
+    """Class for creating Address field."""
 
     def __init__(self, city: str, street: str, building: str):
         self.city = city
@@ -148,6 +160,7 @@ class Address(AbstractEntity):
 
     @classmethod
     def create_entity(cls, vacancy: dict[str: Any]):
+        """Returns instance of Address class."""
         address = vacancy.get("address")
         if not address:
             return 'Адрес не указан'
@@ -161,6 +174,7 @@ class Address(AbstractEntity):
 
 
 class Employer(AbstractEntity):
+    """Class  for creating Employer field."""
 
     def __init__(self, url: str, name: str, employer_id: str):
         self.url = url
@@ -169,6 +183,7 @@ class Employer(AbstractEntity):
 
     @classmethod
     def create_entity(cls, vacancy: dict[str:Any]):
+        """Returns instance of Employer class"""
         employer = vacancy.get("employer")
         url = employer.get("alternate_url")
         name = employer.get("name")
@@ -177,6 +192,3 @@ class Employer(AbstractEntity):
 
     def __repr__(self):
         return f"{self.name} {self.url}"
-
-
-

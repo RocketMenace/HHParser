@@ -9,6 +9,7 @@ class BaseVacancy(ABC):
 
 
 class Vacancy(BaseVacancy):
+    """Composite class for creating Vacancy instances"""
     name: str
     link: str
     pay: str
@@ -24,6 +25,7 @@ class Vacancy(BaseVacancy):
         self.address = address
 
     def create_vacancy(self, vacancies: list[dict]):
+        """Returns list of Vacancies."""
         steps = (self.name.create_entity,
                  self.link.create_entity,
                  self.pay.create_entity,
