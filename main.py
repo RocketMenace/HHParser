@@ -24,9 +24,7 @@ def main():
     # Используем коннектор для создания подключения к базе данных.
     db_connector = DataBaseConnector(db_manager)
     connection, cursor = db_connector.open_connection()
-    connection_is_active = True
-
-    while connection_is_active:
+    while True:
         available_functions = {"1": db_connector.db_manager.get_companies_and_vacancies_count,
                                "2": db_connector.db_manager.get_all_vacancies,
                                "3": db_connector.db_manager.get_avg_salary,
@@ -41,11 +39,11 @@ def main():
               "0 - Завершение работы программы", sep='\n')
         operation = input("Введите номер необходимой операции из предложенных: ")
         if operation == "0":
-            connection_is_active = False
+            break
         if operation == "5":
-            available_functions[operation](cursor, keyword=input("Введите слово: "))
+            print(available_functions[operation](cursor, keyword=input("Введите слово: ")))
         else:
-            available_functions[operation](cursor)
+            print(available_functions[operation](cursor))
     db_connector.close_connection()
 
 
